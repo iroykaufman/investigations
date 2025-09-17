@@ -12,7 +12,7 @@ This guide provides step-by-step instructions for setting up remote attestation 
 
 ## Deploy the trustee server (KBS)
 
-1. Run ```./scripts/deploy-trustee.sh -k <SSH_KEY> -b ./trustee/config/kbs-config.toml```. This will start the KBS with the correct configuration (the name of this VM must match the hostname of the server, so it has to match `KBS_HOSTNAME` in `./scripts/rh-coreos/usr/libexec/aa-client`).
+1. Run ```./scripts/deploy-trustee.sh -k <SSH_KEY> -b ./trustee/trustee.bu```. This will start the KBS with the correct configuration (the name of this VM must match the hostname of the server, so it has to match `KBS_HOSTNAME` in `./scripts/rh-coreos/usr/libexec/aa-client`).
 2. Access the VM via SSH, then run ```sudo /usr/local/bin/populate_kbs.sh```. This will add the refrence value to Trustee.
 
 ## Deploy the client
