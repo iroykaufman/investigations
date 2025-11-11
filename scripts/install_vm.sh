@@ -3,6 +3,8 @@
 set -euo pipefail
 # set -x
 
+source scripts/common.sh
+
 force=false
 while getopts "k:b:n:fi:m:" opt; do
   case $opt in
@@ -69,11 +71,12 @@ elif [[ "$VM_NAME" == "existing-trustee" ]]; then
 	     s|pin-trustee.ign|ignition-clevis-pin-trustee|g" "$butane" > "$bufile"
 elif [ ! -z "$TRUSTEE_ADDR" ]; then
 	sed "s|<KEY>|key|g;
-	     s|<IP>|$TRUSTEE_ADDR|g;
-	     s|pin-trustee.ign|ignition-clevis-pin-trustee|g" "$butane" > "$bufile"
+	     s|<IP>|$TRUSTEE_ADDR|g;" "$butane" > "$bufile"
+	create_remote_ign_config $TRUSTEE_ADDR
 else
 	sed "s|<KEY>|$key|g" $butane > ${bufile}
 fi
+
 
 butane_args=()
 if [[ -d ${butane%.bu} ]]; then
