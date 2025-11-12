@@ -2,6 +2,7 @@
 
 set -euo pipefail
 # set -x
+source common.sh
 
 if [[ "${#}" -ne 1 ]]; then
 	echo "Usage: $0 <path-to-ssh-public-key>"
@@ -26,16 +27,7 @@ until ssh core@$IP \
 done
 
 # Setup remote ignition config
-BUTANE=pin-trustee.bu
-IGNITION="${BUTANE%.bu}.ign"
-
-sed "s/<IP>/$IP/" configs/remote-ign/${BUTANE} > tmp/${BUTANE}
-
-podman run --interactive --rm --security-opt label=disable \
-	--volume "$(pwd)/tmp:/pwd" \
-	--workdir /pwd \
-	quay.io/confidential-clusters/butane:clevis-pin-trustee \
-	--pretty --strict /pwd/$BUTANE --output "/pwd/$IGNITION"
+IGNITION=$(create_remote_ign_config)
 
 scp -i "${KEY%.*}" \
 	-o StrictHostKeyChecking=no \
