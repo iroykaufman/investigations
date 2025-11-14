@@ -20,7 +20,7 @@ $KBC --url http://localhost:8080  config \
 	set-resource-policy  --allow-all
 
 
-cat <<EOF >attestation-policy.rego
+cat <<EOF > tmp/attestation-policy.rego
 package policy
 import rego.v1
 default hardware := 97
@@ -69,4 +69,4 @@ $KBC --url $URL config \
 	get-reference-values
 $KBC --url $URL  config \
 	--auth-private-key $KEY  \
-	set-attestation-policy --policy-file attestation-policy.rego --id default_cpu --type rego
+	set-attestation-policy --policy-file tmp/attestation-policy.rego --id default_cpu --type rego
