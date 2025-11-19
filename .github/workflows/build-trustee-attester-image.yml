@@ -35,7 +35,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build trustee-attester image
+      - name: Build trustee-attester image based on fedora rawhide
         id: build-image
         uses: redhat-actions/buildah-build@v2
         with:
@@ -45,6 +45,8 @@ jobs:
             containerfiles/trustee-attester.container
           context: containerfiles
           oci: true
+          build-args: |
+            BASE=fedora:rawhide
 
       - name: Push to Container Registry
         uses: redhat-actions/push-to-registry@v2
