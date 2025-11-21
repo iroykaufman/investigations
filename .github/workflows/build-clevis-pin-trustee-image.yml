@@ -1,0 +1,63 @@
+name: "Build and push clevis-pin-trustee container image"
+
+env:
+  NAME: "clevis-pin-trustee"
+  REGISTRY: "quay.io/trusted-execution-clusters"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'clevis-pin-trustee/Containerfile'
+      - '.github/workflows/build-clevis-pin-trustee-image.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'clevis-pin-trustee/Containerfile'
+      - '.github/workflows/build-clevis-pin-trustee-image.yml'
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-clevis-pin-trustee-image:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        base_image:
+          - name: buildroot-fedora
+            image: ghcr.io/trusted-execution-clusters/buildroot:fedora
+          - name: buildroot-cs9
+            image: ghcr.io/trusted-execution-clusters/buildroot:centos-stream
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build clevis-pin-trustee image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.NAME }}
+          tags: ${{ matrix.base_image.name }}
+          containerfiles: |
+            clevis-pin-trustee/Containerfile
+          context: clevis-pin-trustee
+          build-args: |
+            BASE=${{ matrix.base_image.image }}
+          oci: true
+
+      - name: Push to Container Registry
+        uses: redhat-actions/push-to-registry@v2
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository_owner == 'trusted-execution-clusters'
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}

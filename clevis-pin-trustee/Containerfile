@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Alice Frosi <afrosi@redhat.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+ARG BASE
+FROM $BASE AS build
+
+RUN git clone https://github.com/latchset/clevis-pin-trustee
+RUN cd clevis-pin-trustee && cargo build --release -p clevis-pin-trustee
+
+FROM scratch
+COPY --from=build /clevis-pin-trustee/target/release/clevis-pin-trustee /usr/bin/clevis-pin-trustee
+COPY --from=build /clevis-pin-trustee/clevis-encrypt-trustee /usr/bin/clevis-encrypt-trustee
+COPY --from=build /clevis-pin-trustee/clevis-decrypt-trustee /usr/bin/clevis-decrypt-trustee
