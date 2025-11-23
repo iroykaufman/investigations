@@ -1,13 +1,14 @@
 ARG BASE
-FROM quay.io/trusted-execution-clusters/trustee-attester:fedora-b13fd8a as kbc
-FROM quay.io/trusted-execution-clusters/clevis-pin-trustee as clevis
-FROM ghcr.io/trusted-execution-clusters/ignition:20260112-85608d6 as ignition
+ARG TRUSTEE_ATTESTER=quay.io/trusted-execution-clusters/trustee-attester:fedora-b13fd8a
+ARG CLEVIS_PIN_TRUSTEE_IMAGE=quay.io/trusted-execution-clusters/clevis-pin-trustee
+ARG IGNITION=ghcr.io/trusted-execution-clusters/ignition:20260112-85608d6
 
-ARG KBS_CLIENT_IMAGE=quay.io/confidential-clusters/trustee-attester:2025-10-21
-ARG CLEVIS_PIN_TRUSTEE_IMAGE=quay.io/confidential-clusters/clevis-pin-trustee
+FROM $TRUSTEE_ATTESTER as kbc
 
-FROM $KBS_CLIENT_IMAGE as kbc
 FROM $CLEVIS_PIN_TRUSTEE_IMAGE as clevis
+
+FROM $IGNITION as ignition
+
 FROM $BASE
 
 COPY ./usr /usr

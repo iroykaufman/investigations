@@ -8,15 +8,20 @@ TRUSTEE_PORT=""
 
 set -xe
 
+## Default values
+VM_NAME="vm"
+ZONE='us-central1-a'
+MACHINE_TYPE='n2d-standard-2'
 
-force=false
-while getopts "k:b:n:i:h:" opt; do
+while getopts "k:b:n:i:h:z:m:" opt; do
   case $opt in
 	k) key=$OPTARG ;;
 	b) butane=$OPTARG ;;
 	n) VM_NAME=$OPTARG ;;
 	i) IMAGE=$OPTARG ;;
 	h) hostname=$OPTARG ;;
+	z) ZONE=$OPTARG ;;
+	m) MACHINE_TYPE=$OPTARG ;;
 	\?) echo "Invalid option"; exit 1 ;;
   esac
 done
@@ -44,16 +49,15 @@ KEY=$(cat "$key")
 
 sed "s|<KEY>|$KEY|g" $butane | sed "s/<IP>/$hostname/" > "${bufile}"
 
-podman run --interactive --rm --security-opt label=disable \
-	--volume "$(pwd)":/pwd -v "${bufile}":/config.bu:z --workdir /pwd quay.io/confidential-clusters/butane:clevis-pin-trustee \
+sudo podman run --interactive  --rm --security-opt label=disable \
+	--volume "$(pwd)":/pwd -v "${bufile}":/config.bu:z --workdir /pwd quay.io/trusted-execution-clusters/butane:attestation \
 	--pretty --strict /config.bu --output "/pwd/${IGNITION_FILE}" -d /pwd/rh-coreos
 
 chcon --verbose --type svirt_home_t ${IGNITION_CONFIG}
 
 
 
-ZONE='us-central1-a'
-MACHINE_TYPE='n2d-standard-2'
+
 
 gcloud compute instances create ${VM_NAME}             \
 	--image ${IMAGE}                                    \

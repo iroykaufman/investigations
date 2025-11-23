@@ -22,14 +22,13 @@ os_name := if os == "scos" { scos_os } else { fcos_os }
 label := if os == "scos" { scos_label } else { fcos_label }
 archive := os + ".ociarchive"
 platform := "qemu"
-kbc_image := "quay.io/afrosi_rh/kbs-client-image:latest"
-clevis_pin_trustee_image := "quay.io/confidential-clusters/clevis-pin-trustee"
+
 
 config := if os == "scos" { scos_config } else { fcos_config }
 full_name := if os == "scos" { "centos-stream-coreos" } else { "fedora-coreos" }
 
 build:
-    sudo podman build --no-cache --build-arg BASE={{base}} --build-arg COM_COREOS_OSNAME={{label}} --build-arg KBS_CLIENT_IMAGE={{kbc_image}} --build-arg CLEVIS_PIN_TRUSTEE_IMAGE={{clevis_pin_trustee_image}} -t {{image}} -f Containerfile .
+    sudo podman build --no-cache --build-arg BASE={{base}} --build-arg COM_COREOS_OSNAME={{label}} -t {{image}} -f Containerfile .
 
 oci-archive:
     sudo skopeo copy containers-storage:{{image}} oci-archive:{{archive}}
@@ -83,3 +82,8 @@ azure:
     {{cosa_function}}
     cd cache
     cosa osbuild azure
+gcp:
+    #!/usr/bin/env bash
+    {{cosa_function}}
+    cd cache
+    cosa osbuild gcp
