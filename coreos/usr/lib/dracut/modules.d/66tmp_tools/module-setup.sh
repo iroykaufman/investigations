@@ -18,6 +18,7 @@ install () {
         tpm2_nvread \
         tpm2_nvwrite \
         tpm2_pcrread \
+        tpm2_readpublic \
         tpm2_unseal
 
     # Library dependencies
