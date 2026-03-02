@@ -1,5 +1,5 @@
 variant: fcos
-version: 1.6.0
+version: 1.7.0-experimental
 storage:
   luks:
     - name: root
@@ -14,7 +14,13 @@ storage:
             {
               "servers":[{"url":"http://<IP>:8080","cert":""}],
               "path":"default/machine/root",
-              "initdata":"{\"uuid\":\"machine\"}"
+              "attestation_key": {
+                "registration": {
+                   "url": "http://<IP>:5001",
+                   "uuid": "machine",
+                   "cert": ""
+                }
+              }
             }
       wipe_volume: true
   filesystems:

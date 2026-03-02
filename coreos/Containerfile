@@ -1,7 +1,7 @@
 ARG BASE
 ARG KBC_IMG="quay.io/trusted-execution-clusters/trustee-attester:fedora-b13fd8a"
-ARG CLEVIS_PIN_IMG="quay.io/trusted-execution-clusters/clevis-pin-trustee"
-ARG IGNITION_IMG="ghcr.io/trusted-execution-clusters/ignition:20260112-85608d6"
+ARG CLEVIS_PIN_IMG="quay.io/trusted-execution-clusters/clevis-pin-trustee:fedora-75015a5"
+ARG IGNITION_IMG="quay.io/trusted-execution-clusters/ignition:fedora-5a45ee84"
 
 FROM "$KBC_IMG" as kbc
 FROM "$CLEVIS_PIN_IMG" as clevis

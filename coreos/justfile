@@ -28,8 +28,8 @@ full_name := os_name
 label := os_name
 
 kbc_image := "quay.io/trusted-execution-clusters/trustee-attester:fedora-b13fd8a"
-clevis_pin_trustee_image := "quay.io/trusted-execution-clusters/clevis-pin-trustee"
-ignition_image := "ghcr.io/trusted-execution-clusters/ignition:20260112-85608d6"
+clevis_pin_trustee_image := "quay.io/trusted-execution-clusters/clevis-pin-trustee:fedora-75015a5"
+ignition_image := "quay.io/trusted-execution-clusters/ignition:fedora-5a45ee84"
 
 info:
     @echo "os {{os}}"
