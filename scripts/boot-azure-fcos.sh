@@ -9,7 +9,9 @@ STABLE_IMAGE="fedora-coreos-42.20250721.3.0-azure.x86_64.vhd.xz"
 STABLE_IMAGE_UNCOMPRESSED="fedora-coreos-42.20250721.3.0-azure.x86_64.vhd"
 
 butane="configs/simple.bu"
-key=""
+uki=false
+key=$1
+
 if [ -z "${key}" ]; then
 	echo "Please, specify the public ssh key"
 	exit 1
@@ -51,6 +53,7 @@ az_image_name="${az_id}-image"
 az_image_blob="${az_image_name}.vhd"
 gallery_name="${az_id}gallery"
 gallery_image_definition="${az_id}-gallery-def"
+gallery_image_version="1.0.0"
 vm_name="${az_id}-cvm"
 vm_size="Standard_DC2as_v5"
 
@@ -73,11 +76,20 @@ az storage container create \
     -n "${az_container}"
 # Upload image blob
 az storage blob upload \
+    --overwrite \
     --connection-string "${cs}" \
     -c "${az_container}" \
     -f "${STABLE_IMAGE_UNCOMPRESSED}" \
     -n "${az_image_blob}"
 
+az image create \
+    -n "${az_image_name}" \
+    -g "${az_resource_group}" \
+    --source "https://${az_storage_account}.blob.core.windows.net/${az_container}/${az_image_blob}" \
+    --location "${az_region}" \
+    --os-type Linux \
+    --hyper-v-generation V2
+    
 # Create an image gallery
 az sig create \
     --resource-group "${az_resource_group}" \
@@ -91,35 +103,47 @@ az sig image-definition create \
     --publisher azure \
     --offer example \
     --sku standard \
-    --features SecurityType=ConfidentialVmSupported \
+    --features SecurityType=TrustedLaunchAndConfidentialVmSupported \
     --os-type Linux \
     --hyper-v-generation V2
 
-# Get the source VHD URI of OS disk
-os_vhd_storage_account=$(az storage account list -g ${az_resource_group} | jq -r .[].id)
+if [[ "${uki}" == false ]]; then
+    # Get the source VHD URI of OS disk
+    os_vhd_storage_account=$(az storage account list -g ${az_resource_group} | jq -r .[].id)
 
-# Create a new image version
-gallery_image_version="1.0.0"
-az sig image-version create \
-    --resource-group "${az_resource_group}" \
-    --gallery-name "${gallery_name}" \
-    --gallery-image-definition "${gallery_image_definition}" \
-    --gallery-image-version "${gallery_image_version}" \
-    --os-vhd-storage-account "${os_vhd_storage_account}" \
-    --os-vhd-uri https://${az_storage_account}.blob.core.windows.net/${az_container}/${az_image_blob}
+    # Create a new image version
+    az sig image-version create \
+        --resource-group "${az_resource_group}" \
+        --gallery-name "${gallery_name}" \
+        --gallery-image-definition "${gallery_image_definition}" \
+        --gallery-image-version "${gallery_image_version}" \
+        --os-vhd-storage-account "${os_vhd_storage_account}" \
+        --os-vhd-uri https://${az_storage_account}.blob.core.windows.net/${az_container}/${az_image_blob}
+else 
+    storage_account_id=$(az image show --name "${az_image_name}" --resource-group "${az_resource_group}" --query id -o tsv)
+    # update the deploy-image.json with the correct values. see https://learn.microsoft.com/en-us/azure/virtual-machines/trusted-launch-secure-boot-custom-uefi
+    cp ./coreos/deploy-image.json ./tmp/deploy-image.json
+    sed -i 's|<IMG_GALLERY>|'"${gallery_name}"'|g' ./tmp/deploy-image.json
+    sed -i 's|<IMG_GALLERY_DEF>|'"${gallery_image_definition}"'|g' ./tmp/deploy-image.json
+    sed -i 's|<SUBSCRIPTION_ID>|'"${storage_account_id}"'|g' ./tmp/deploy-image.json
+    sed -i 's|<IMG_GALLERY_VER>|'"${gallery_image_version}"'|g' ./tmp/deploy-image.json
+    base64 -w 0 ./coreos/cache/bootc/target/test-secureboot/db.der | xargs -I {} sed -i 's|<SIGNATURE_VALUE>|{}|g' ./tmp/deploy-image.json
+
+    az deployment group create --resource-group "${az_resource_group}" --template-file ./tmp/deploy-image.json
+fi
 
 # Get gallery image id
 gallery_image_id=$(az sig image-version show \
     --gallery-image-definition "${gallery_image_definition}" \
     --gallery-image-version "${gallery_image_version}" \
     --gallery-name "${gallery_name}" \
-    --resource-group $az_resource_group | jq \
+    --resource-group "${az_resource_group}" | jq \
     -r .id)
 
 # Create a VM with confidential computing enabled using the gallery image and an ignition config as custom-data
 az vm create \
     --name "${vm_name}" \
-    --resource-group $az_resource_group \
+    --resource-group "${az_resource_group}" \
     --size "${vm_size}" \
     --image "${gallery_image_id}" \
     --admin-username core \
